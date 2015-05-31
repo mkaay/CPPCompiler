@@ -7,72 +7,56 @@ import java.util.List;
 
 
 public class TypeChecker {
-
-
     public void typecheck(Program p) {
         PDefs prog = (PDefs) p;
         Env env = new Env();
+
         for (Def def : prog.listdef_) {
-            def.accept(new CheckDef(), env);
+            def.accept(new Def.Visitor<Object, Env>() {
+                @Override
+                public Object visit(DFun f, Env env) {
+                    List<TypeCode> args = new LinkedList<>();
+                    for (Arg arg : f.listarg_) {
+                        ADecl a = arg.accept(new CheckArg(), env);
+                        args.add(typeCode(a.type_));
+                    }
+                    env.addFun(f.id_, new FunType(args, typeCode(f.type_)));
+
+                    return null;
+                }
+            }, env);
+        }
+
+        for (Def def : prog.listdef_) {
+            def.accept(new Def.Visitor<Object, Env>() {
+                @Override
+                public Object visit(DFun f, Env env) {
+                    checkFun(f, env);
+                    return null;
+                }
+            }, env);
         }
     }
-
-    private class CheckDef implements Def.Visitor<Object, Env> {
-        @Override
-        public Object visit(DFun f, Env env) {
-            checkFun(f, env);
-            return null;
-        }
-    }
-
-    /*
-    private class DefChecker implements Def.Visitor<Object, Env> {
-        public Object visit(SDecl p, Env env) {
-            env.addVar(p.ident_, typeCode(p.type_));
-            return null;
-        }
-
-        public Object visit(SAss p, Env env) {
-            TypeCode t = env.lookupVar(p.ident_);
-            checkExp(p.exp_, t, env);
-            return null;
-        }
-
-        public Object visit(SBlock p, Env env) {
-            env.enterScope();
-            for (Stm st : p.liststm_) {
-                checkStm(st, env);
-            }
-            env.leaveScope();
-            return null;
-        }
-
-        public Object visit(SPrint p, Env env) {
-            // we don't care what the type is, just that there is one
-            inferExp(p.exp_, env);
-            return null;
-        }
-
-    }
-    */
 
     private void checkFun(DFun f, Env env) {
-        List<TypeCode> args = new LinkedList<>();
-        for (Arg arg : f.listarg_) {
-            args.add(arg.accept(new CheckArg(), env));
-        }
-        env.addFun(f.id_, new FunType(args, typeCode(f.type_)));
-
         env.enterFunction(f.id_);
+
+        for (Arg arg : f.listarg_) {
+            ADecl a = arg.accept(new CheckArg(), env);
+            env.addVar(a.id_, typeCode(a.type_));
+        }
+
         for (Stm st : f.liststm_) {
             st.accept(new CheckStm(), env);
         }
+
         env.leaveFunction();
     }
 
     private class CheckStm implements Stm.Visitor<Object,Env> {
         @Override
         public Object visit(SExp stm, Env env) {
+            inferExp(stm.exp_, env);
             return null;
         }
 
@@ -118,24 +102,48 @@ public class TypeChecker {
 
         @Override
         public Object visit(SWhile stm, Env env) {
+            TypeCode et = inferExp(stm.exp_, env);
+            TypeCode t = TypeCode.BOOL;
+            if (et != t) {
+                throw new TypeException(PrettyPrinter.print(stm)
+                        + " has type " + et
+                        + " expected " + t);
+            }
+
+            stm.stm_.accept(this, env);
             return null;
         }
 
         @Override
         public Object visit(SBlock stm, Env env) {
+            env.enterScope();
+            for (Stm st : stm.liststm_) {
+                st.accept(this, env);
+            }
+            env.leaveScope();
             return null;
         }
 
         @Override
         public Object visit(SIfElse stm, Env env) {
+            TypeCode et = inferExp(stm.exp_, env);
+            TypeCode t = TypeCode.BOOL;
+            if (et != t) {
+                throw new TypeException(PrettyPrinter.print(stm)
+                        + " has type " + et
+                        + " expected " + t);
+            }
+
+            stm.stm_1.accept(this, env);
+            stm.stm_2.accept(this, env);
             return null;
         }
     }
 
-    private class CheckArg implements Arg.Visitor<TypeCode, Env> {
+    private class CheckArg implements Arg.Visitor<ADecl, Env> {
         @Override
-        public TypeCode visit(ADecl a, Env env) {
-            return typeCode(a.type_);
+        public ADecl visit(ADecl a, Env env) {
+            return a;
         }
     }
 
@@ -148,13 +156,16 @@ public class TypeChecker {
         }
     }
 
-    private void checkReturn(Exp e, TypeCode t, Env env) {
+    public TypeCode checkNumber(Exp e, Env env) {
         TypeCode et = inferExp(e, env);
-        if (et != t) {
+
+        if (!et.equals(TypeCode.INT) && !et.equals(TypeCode.DOUBLE)) {
             throw new TypeException(PrettyPrinter.print(e)
                     + " has type " + et
-                    + " expected " + t);
+                    + " expected " + TypeCode.INT + " or " + TypeCode.DOUBLE);
         }
+
+        return et;
     }
 
     private TypeCode inferExp(Exp e, Env env) {
@@ -195,107 +206,161 @@ public class TypeChecker {
 
         @Override
         public TypeCode visit(EApp p, Env env) {
-            return null;
+            FunType ft = env.lookupFun(p.id_);
+
+            int i = 0;
+            for (Exp e : p.listexp_) {
+                checkExp(e, ft.args.get(i), env);
+                i++;
+            }
+
+            if (i != ft.args.size()) {
+                throw new TypeException(PrettyPrinter.print(p)
+                        + " expected " + String.valueOf(ft.args.size())
+                        + " number of arguments, got " + String.valueOf(i) + " instead");
+            }
+
+            return ft.val;
         }
 
         @Override
         public TypeCode visit(EPIncr p, Env env) {
-            return null;
+            return checkNumber(p.exp_, env);
         }
 
         @Override
         public TypeCode visit(EPDecr p, Env env) {
-            return null;
+            return checkNumber(p.exp_, env);
         }
 
         @Override
         public TypeCode visit(EIncr p, Env env) {
-            return null;
+            return checkNumber(p.exp_, env);
         }
 
         @Override
         public TypeCode visit(EDecr p, Env env) {
-            return null;
+            return checkNumber(p.exp_, env);
         }
 
         @Override
         public TypeCode visit(ETimes p, Env env) {
-            return null;
+            TypeCode et = checkNumber(p.exp_1, env);
+
+            checkExp(p.exp_2, et, env);
+
+            return et;
         }
 
         @Override
         public TypeCode visit(EDiv p, Env env) {
-            return null;
+            TypeCode et = checkNumber(p.exp_1, env);
+
+            checkExp(p.exp_2, et, env);
+
+            return et;
         }
 
         @Override
         public TypeCode visit(EPlus p, Env env) {
-            TypeCode t1 = p.exp_1.accept(this, env);
-            TypeCode t2 = p.exp_2.accept(this, env);
+            TypeCode et = checkNumber(p.exp_1, env);
 
-            if (t1 != t2) {
-                throw new TypeException(PrettyPrinter.print(p.exp_1) +
-                        " has type " + t1
-                        + " but " + PrettyPrinter.print(p.exp_1)
-                        + " has type " + t2);
-            }
+            checkExp(p.exp_2, et, env);
 
-            return t1;
+            return et;
         }
 
         @Override
         public TypeCode visit(EMinus p, Env env) {
-            return null;
+            TypeCode et = checkNumber(p.exp_1, env);
+
+            checkExp(p.exp_2, et, env);
+
+            return et;
         }
 
         @Override
         public TypeCode visit(ELt p, Env env) {
-            return null;
+            TypeCode et = checkNumber(p.exp_1, env);
+
+            checkExp(p.exp_2, et, env);
+
+            return TypeCode.BOOL;
         }
 
         @Override
         public TypeCode visit(EGt p, Env env) {
-            return null;
+            TypeCode et = checkNumber(p.exp_1, env);
+
+            checkExp(p.exp_2, et, env);
+
+            return TypeCode.BOOL;
         }
 
         @Override
         public TypeCode visit(ELtEq p, Env env) {
-            return null;
+            TypeCode et = checkNumber(p.exp_1, env);
+
+            checkExp(p.exp_2, et, env);
+
+            return TypeCode.BOOL;
         }
 
         @Override
         public TypeCode visit(EGtEq p, Env env) {
-            return null;
+            TypeCode et = checkNumber(p.exp_1, env);
+
+            checkExp(p.exp_2, et, env);
+
+            return TypeCode.BOOL;
         }
 
         @Override
         public TypeCode visit(EEq p, Env env) {
-            return null;
+            TypeCode et = inferExp(p.exp_1, env);
+
+            checkExp(p.exp_2, et, env);
+
+            return TypeCode.BOOL;
         }
 
         @Override
         public TypeCode visit(ENEq p, Env env) {
-            return null;
+            TypeCode et = inferExp(p.exp_1, env);
+
+            checkExp(p.exp_2, et, env);
+
+            return TypeCode.BOOL;
         }
 
         @Override
         public TypeCode visit(EAnd p, Env env) {
-            return null;
+            checkExp(p.exp_1, TypeCode.BOOL, env);
+            checkExp(p.exp_2, TypeCode.BOOL, env);
+
+            return TypeCode.BOOL;
         }
 
         @Override
         public TypeCode visit(EOr p, Env env) {
-            return null;
+            checkExp(p.exp_1, TypeCode.BOOL, env);
+            checkExp(p.exp_2, TypeCode.BOOL, env);
+
+            return TypeCode.BOOL;
         }
 
         @Override
         public TypeCode visit(EAss p, Env env) {
-            return null;
+            TypeCode et = inferExp(p.exp_1, env);
+
+            checkExp(p.exp_2, et, env);
+
+            return et;
         }
 
         @Override
         public TypeCode visit(ETyped p, Env env) {
-            return null;
+            return inferExp(p.exp_, env);
         }
 
     }
@@ -339,6 +404,8 @@ public class TypeChecker {
             parser p = new parser(l);
             Program parse_tree = p.pProgram();
             new TypeChecker().typecheck(parse_tree);
+
+            System.out.println("OK");
         } catch (TypeException e) {
             System.out.println("TYPE ERROR");
             System.err.println(e.toString());
@@ -346,6 +413,7 @@ public class TypeChecker {
         } catch (RuntimeException e) {
             System.out.println("RUNTIME ERROR");
             System.err.println(e.toString());
+            e.printStackTrace();
             System.exit(1);
         } catch (java.io.IOException e) {
             System.err.println(e.toString());
