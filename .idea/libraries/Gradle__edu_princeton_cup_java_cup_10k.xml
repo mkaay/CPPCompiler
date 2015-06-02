@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: edu.princeton.cup:java-cup:10k">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/edu.princeton.cup/java-cup/10k/88eadc5347b2a22c9c87a04687f0aabaeac01c0b/java-cup-10k.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/edu.princeton.cup/java-cup/10k/cd22d1714aca6607ad3c95609029ce22a4efabc1/java-cup-10k-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

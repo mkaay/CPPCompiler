@@ -1,8 +1,5 @@
-package CPP;
+package group11.typechecker;
 
-/**
- * Created by mkaay on 31.05.15.
- */
 enum TypeCode {
     BOOL {
         public String toString() {

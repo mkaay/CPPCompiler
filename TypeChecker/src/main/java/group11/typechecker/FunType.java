@@ -1,10 +1,7 @@
-package CPP;
+package group11.typechecker;
 
 import java.util.List;
 
-/**
- * Created by mkaay on 31.05.15.
- */
 public class FunType {
     public List<TypeCode> args;
     public TypeCode val;

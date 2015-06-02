@@ -1,17 +1,13 @@
-package CPP;
+package group11.typechecker;
 
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
-/**
- * Created by mkaay on 31.05.15.
- */
 class Env {
     private Map<String, FunType> signatures;
     private LinkedList<Map<String, TypeCode>> scopes;
-    private FunType function;
+    private String function;
 
     public Env() {
         scopes = new LinkedList<>();
@@ -23,8 +19,9 @@ class Env {
     public String toString() {
         StringBuilder s = new StringBuilder();
 
-        s.append("Signatures:");
-        s.append("\n");
+        s.append("<Env>\n");
+
+        s.append("<Signatures>\n");
 
         for (Map.Entry<String, FunType> pair : signatures.entrySet()) {
             s.append(pair.getValue().val);
@@ -39,15 +36,18 @@ class Env {
             s.append("\n");
         }
 
-        s.append("\n");
+        s.append("</Signatures>\n");
 
-        s.append("Context:");
-        s.append("\n");
+        s.append("<Context>\n");
+
+        int depth = scopes.size();
+
+        while (depth-- > 0) {
+            s.append("{");
+            s.append("\n");
+        }
 
         for (Map<String, TypeCode> ctx : scopes) {
-            s.append("-start-");
-            s.append("\n");
-
             for (Map.Entry<String, TypeCode> pair : ctx.entrySet()) {
                 s.append(pair.getValue());
                 s.append(" ");
@@ -55,9 +55,12 @@ class Env {
                 s.append("\n");
             }
 
-            s.append("-end-");
+            s.append("}");
             s.append("\n");
         }
+
+        s.append("</Context>\n");
+        s.append("</Env>\n");
 
         return s.toString();
     }
@@ -69,26 +72,26 @@ class Env {
                 return t;
             }
         }
-        throw new TypeException(String.format("Unknown variable %s.", x), this);
+        throw TypeException.variableUnknown(x, this);
     }
 
     public FunType lookupFun(String id) {
         if (signatures.containsKey(id)) {
             return signatures.get(id);
         }
-        throw new TypeException(String.format("Unknown function %s.", id), this);
+        throw TypeException.functionUnknown(id, this);
     }
 
     public void addVar(String x, TypeCode t) {
         if (scopes.getFirst().containsKey(x)) {
-            throw new TypeException(String.format("Variable %s is already declared in this scope.", x), this);
+            throw TypeException.variableExists(x, this);
         }
         scopes.getFirst().put(x, t);
     }
 
     public void addFun(String id, FunType t) {
         if (signatures.containsKey(id)) {
-            throw new TypeException(String.format("Function %s is already declared in this scope.", id), this);
+            throw TypeException.functionExists(id, this);
         }
         signatures.put(id, t);
     }
@@ -102,7 +105,7 @@ class Env {
     }
 
     public void enterFunction(String id) {
-        function = signatures.get(id);
+        function = id;
         enterScope();
     }
 
@@ -113,6 +116,11 @@ class Env {
 
     public TypeCode getReturnType() {
         assert function != null;
-        return function.val;
+        return signatures.get(function).val;
+    }
+
+    public String getFunctionName() {
+        assert function != null;
+        return function;
     }
 }
