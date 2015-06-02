@@ -142,6 +142,11 @@ public class TypeChecker {
     }
 
     public static void main(String args[]) {
+        if (args.length != 1) {
+            System.err.println("No input file!");
+            System.exit(1);
+        }
+
         Yylex l = null;
         try {
             l = new Yylex(new java.io.FileReader(args[0]));
@@ -152,7 +157,7 @@ public class TypeChecker {
             System.out.println("OK");
         } catch (TypeException e) {
             System.out.println("TYPE ERROR");
-            System.err.println(e.toString());
+            System.err.println(e.getMessage());
             System.exit(1);
         } catch (RuntimeException e) {
             System.out.println("RUNTIME ERROR");
@@ -164,9 +169,7 @@ public class TypeChecker {
             System.exit(1);
         } catch (Throwable e) {
             System.out.println("SYNTAX ERROR");
-            System.out.println("At line " + String.valueOf(l.line_num())
-                    + ", near \"" + l.buff() + "\" :");
-            System.out.println("     " + e.getMessage());
+            System.err.println(String.format("At line %d, near '%s':\n%s", l.line_num(), l.buff(), e.getMessage()));
             e.printStackTrace();
             System.exit(1);
         }

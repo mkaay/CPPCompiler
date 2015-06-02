@@ -5,6 +5,12 @@ sourceCompatibility = 1.7
 
 mainClassName = 'group11.typechecker.TypeChecker'
 
+run {
+    if (project.hasProperty('args')) {
+        args = [project.property('file')]
+    }
+}
+
 repositories {
     mavenCentral()
 }
