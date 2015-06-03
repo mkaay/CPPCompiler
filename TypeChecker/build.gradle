@@ -6,7 +6,7 @@ sourceCompatibility = 1.7
 mainClassName = 'group11.typechecker.TypeChecker'
 
 run {
-    if (project.hasProperty('args')) {
+    if (project.hasProperty('file')) {
         args = [project.property('file')]
     }
 }
@@ -29,7 +29,13 @@ jar {
 test {
     useTestNG()
 
+    outputs.upToDateWhen { false }
+
     //afterTest { descriptor, result ->
     //    logger.lifecycle(descriptor.getName() + ": " + result.getResultType())
     //}
+
+    onOutput { descriptor, event ->
+        logger.lifecycle(event.message)
+    }
 }

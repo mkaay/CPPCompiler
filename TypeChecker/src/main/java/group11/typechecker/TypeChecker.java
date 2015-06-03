@@ -52,20 +52,20 @@ public class TypeChecker {
         } catch (TypeException e) {
             System.out.println("TYPE ERROR");
             System.err.println(e.getMessage());
-            System.exit(1);
+            //System.exit(1);
         } catch (RuntimeException e) {
             System.out.println("RUNTIME ERROR");
             System.err.println(e.toString());
             e.printStackTrace();
-            System.exit(1);
+            //System.exit(1);
         } catch (java.io.IOException e) {
             System.err.println(e.toString());
-            System.exit(1);
+            //System.exit(1);
         } catch (Throwable e) {
             System.out.println("SYNTAX ERROR");
             System.err.println(String.format("At line %d, near '%s':\n%s", l.line_num(), l.buff(), e.getMessage()));
             e.printStackTrace();
-            System.exit(1);
+            //System.exit(1);
         }
     }
 
