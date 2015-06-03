@@ -4,12 +4,12 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
-class Env {
-    private Map<String, FunType> signatures;
+class Environment {
+    private Map<String, FunctionType> signatures;
     private LinkedList<Map<String, TypeCode>> scopes;
     private String function;
 
-    public Env() {
+    public Environment() {
         scopes = new LinkedList<>();
         signatures = new HashMap<>();
         function = null;
@@ -23,7 +23,7 @@ class Env {
 
         s.append("<Signatures>\n");
 
-        for (Map.Entry<String, FunType> pair : signatures.entrySet()) {
+        for (Map.Entry<String, FunctionType> pair : signatures.entrySet()) {
             s.append(pair.getValue().val);
             s.append(" ");
             s.append(pair.getKey());
@@ -65,7 +65,7 @@ class Env {
         return s.toString();
     }
 
-    public TypeCode lookupVar(String x) {
+    public TypeCode lookupVariable(String x) {
         for (Map<String, TypeCode> scope : scopes) {
             TypeCode t = scope.get(x);
             if (t != null) {
@@ -75,21 +75,21 @@ class Env {
         throw TypeException.variableUnknown(x, this);
     }
 
-    public FunType lookupFun(String id) {
+    public FunctionType lookupFunction(String id) {
         if (signatures.containsKey(id)) {
             return signatures.get(id);
         }
         throw TypeException.functionUnknown(id, this);
     }
 
-    public void addVar(String x, TypeCode t) {
+    public void addVariable(String x, TypeCode t) {
         if (scopes.getFirst().containsKey(x)) {
             throw TypeException.variableExists(x, this);
         }
         scopes.getFirst().put(x, t);
     }
 
-    public void addFun(String id, FunType t) {
+    public void addFunction(String id, FunctionType t) {
         if (signatures.containsKey(id)) {
             throw TypeException.functionExists(id, this);
         }

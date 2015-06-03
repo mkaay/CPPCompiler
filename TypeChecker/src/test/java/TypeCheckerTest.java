@@ -56,8 +56,14 @@ public class TypeCheckerTest {
             Program parse_tree = p.pProgram();
             new TypeChecker().typecheck(parse_tree);
 
+            System.out.print(file.getName());
+            System.out.println(": OK");
+
             return true;
         } catch (TypeException e) {
+            System.out.print(file.getName());
+            System.out.print(": ");
+            System.out.println(e.getMessage());
             return false;
         }
     }

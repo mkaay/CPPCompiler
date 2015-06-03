@@ -29,7 +29,7 @@ jar {
 test {
     useTestNG()
 
-    afterTest { descriptor, result ->
-        logger.lifecycle(descriptor.getName() + ": " + result.getResultType())
-    }
+    //afterTest { descriptor, result ->
+    //    logger.lifecycle(descriptor.getName() + ": " + result.getResultType())
+    //}
 }
