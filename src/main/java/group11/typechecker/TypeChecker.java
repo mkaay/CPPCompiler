@@ -8,7 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class TypeChecker {
-    public void typecheck(Program p) {
+    public static void eval(Program p) {
         PDefs prog = (PDefs) p;
         Environment env = new Environment();
 
@@ -46,7 +46,7 @@ public class TypeChecker {
             l = new Yylex(new java.io.FileReader(args[0]));
             parser p = new parser(l);
             Program parse_tree = p.pProgram();
-            new TypeChecker().typecheck(parse_tree);
+            TypeChecker.eval(parse_tree);
 
             System.out.println("OK");
         } catch (TypeException e) {
