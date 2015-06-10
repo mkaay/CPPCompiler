@@ -9,26 +9,32 @@ import java.util.Map;
 
 public class FunctionScope {
     private final ValueRef function;
+    private final ModuleRef module;
     private final BuilderRef allocator;
 
     private final LinkedList<BasicBlockRef> blocks = new LinkedList<>();
     private BuilderRef builder = null;
     private final LinkedList<Map<String, Variable>> lookupTable = new LinkedList<>();
+    private static final Map<String, ValueRef> functions = new HashMap<>();
 
     private Map<String, Integer> prefixCounter = new HashMap<>();
 
 
-    public FunctionScope(ValueRef function) {
+    public FunctionScope(ValueRef function, ModuleRef module) {
         this.function = function;
+        this.module = module;
+
+        BasicBlockRef entryBlock = createBlock("entry");
 
         allocator = LLVM.CreateBuilder();
-        LLVM.PositionBuilderAtEnd(allocator, LLVM.AppendBasicBlock(function, "allocate"));
+        LLVM.PositionBuilderAtEnd(allocator, entryBlock);
 
-        createBlock("entry");
+        enterBlock(entryBlock);
         enterScope();
     }
 
     public BuilderRef getBuilder() {
+        assert builder != null;
         return builder;
     }
 
@@ -54,7 +60,7 @@ public class FunctionScope {
     }
 
     public void leaveBlock() {
-        if (blocks.size() < 1) {
+        if (blocks.size() <= 1) {
             throw new InterpreterException("trying to leave entry block");
         }
 
@@ -88,8 +94,21 @@ public class FunctionScope {
         throw new InterpreterException(String.format("can't find '%s' in lookup table", name));
     }
 
+    public static ValueRef getFunction(String name) {
+        return functions.get(name);
+    }
+
+    public static void addFunction(String name, ValueRef function) {
+        functions.put(name, function);
+    }
+
     public ValueRef addVariable(String name, TypeRef type) {
         ValueRef value = LLVM.BuildAlloca(allocator, type, uniqueName(name));
+        lookupTable.getFirst().put(name, new Variable(type, value));
+        return value;
+    }
+
+    public ValueRef addVariable(String name, TypeRef type, ValueRef value) {
         lookupTable.getFirst().put(name, new Variable(type, value));
         return value;
     }

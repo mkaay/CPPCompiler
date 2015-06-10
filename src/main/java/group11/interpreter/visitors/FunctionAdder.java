@@ -3,6 +3,7 @@ package group11.interpreter.visitors;
 import CPP.Absyn.Arg;
 import CPP.Absyn.DFun;
 import CPP.Absyn.Def;
+import group11.interpreter.helpers.FunctionScope;
 import group11.interpreter.helpers.SmartTypeRefArray;
 import org.robovm.llvm.binding.LLVM;
 import org.robovm.llvm.binding.ModuleRef;
@@ -21,6 +22,8 @@ public class FunctionAdder implements Def.Visitor<ValueRef, ModuleRef> {
         TypeRef returnType = function.type_.accept(new TypeInterpreter(), null);
         TypeRef functionType = LLVM.FunctionType(returnType, types, function.listarg_.size(), false);
 
-        return LLVM.AddFunction(module, function.id_, functionType);
+        ValueRef functionRef = LLVM.AddFunction(module, function.id_, functionType);
+        FunctionScope.addFunction(function.id_, functionRef);
+        return functionRef;
     }
 }

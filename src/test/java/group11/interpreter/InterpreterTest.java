@@ -12,7 +12,7 @@ import java.io.FileReader;
 
 public class InterpreterTest {
 
-    @Test
+    //@Test
     public void test() {
         ModuleRef mod = LLVM.ModuleCreateWithName("test");
 
@@ -53,29 +53,33 @@ public class InterpreterTest {
             throw new LlvmException(ErrorMessage.getValue().trim());
         }
 
-        LLVM.PrintModuleToFile(mod, "test.ll", ErrorMessage);
-        LLVM.DumpModule(mod);
+        //LLVM.PrintModuleToFile(mod, "test.ll", ErrorMessage);
+        //LLVM.DumpModule(mod);
     }
 
     @Test
-    public boolean interpret() throws Exception {
+    public void interpret() throws Exception {
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
 
         try {
-            Yylex l = new Yylex(new FileReader(new File(loader.getResource("good/core001.cc").getPath())));
+            Yylex l = new Yylex(new FileReader(new File(loader.getResource("interpreter/core001.cc").getPath())));
             parser p = new parser(l);
             Program parse_tree = p.pProgram();
-            Interpreter.eval(parse_tree);
+            Interpreter.eval(parse_tree, new File("core001.ll"));
 
             //System.out.print(file.getName());
             //System.out.println(": OK");
 
-            return true;
-        } catch (InterpreterException e) {
+            //    return true;
+            //} catch (InterpreterException e) {
             //System.out.print(file.getName());
             //System.out.print(": ");
             //System.out.println(e.getMessage());
-            return false;
+            //    return false;
+            //}
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
         }
     }
 }
