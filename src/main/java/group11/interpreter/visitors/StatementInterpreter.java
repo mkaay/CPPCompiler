@@ -43,7 +43,7 @@ public class StatementInterpreter implements Stm.Visitor<Object, FunctionScope> 
     public Object visit(SReturn statement, FunctionScope functionScope) {
         ValueRef value = statement.exp_.accept(new ExpressionInterpreter(), functionScope);
 
-        LLVM.BuildRet(functionScope.getBuilder(), value);
+        LLVM.BuildRet(functionScope.getBuilder(), ExpressionInterpreter.ensureValue(value, functionScope));
 
         return null;
     }

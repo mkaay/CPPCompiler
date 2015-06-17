@@ -103,6 +103,14 @@ public class FunctionScope {
     }
 
     public ValueRef addVariable(String name, TypeRef type) {
+        // put all allocations at the beginning of the functions
+        ValueRef pos = LLVM.GetFirstInstruction(blocks.getLast());
+        if (pos != null) {
+            LLVM.PositionBuilderBefore(allocator, pos);
+        } else {
+            LLVM.PositionBuilderAtEnd(allocator, blocks.getLast());
+        }
+
         ValueRef value = LLVM.BuildAlloca(allocator, type, uniqueName(name));
         lookupTable.getFirst().put(name, new Variable(type, value));
         return value;

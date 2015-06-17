@@ -5,10 +5,16 @@ import CPP.Yylex;
 import CPP.parser;
 import org.robovm.llvm.LlvmException;
 import org.robovm.llvm.binding.*;
+import org.testng.Assert;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.FileReader;
+import java.lang.reflect.Method;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 public class InterpreterTest {
 
@@ -57,15 +63,36 @@ public class InterpreterTest {
         //LLVM.DumpModule(mod);
     }
 
-    @Test
-    public void interpret() throws Exception {
+    @DataProvider(name = "sources")
+    public Iterator<Object[]> sources(Method m) {
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        return loadDir(new File(loader.getResource("good").getPath()));
+    }
 
+    public Iterator<Object[]> loadDir(File dir) {
+        List<Object[]> data = new LinkedList<>();
+
+        for (File file : dir.listFiles()) {
+            if (file.isFile()) {
+                data.add(new Object[]{file});
+            }
+        }
+
+        return data.iterator();
+    }
+
+    @Test(dataProvider = "sources")
+    public void testGood(File file) throws Exception {
+        Assert.assertTrue(interpret(file));
+    }
+
+    @Test
+    public boolean interpret(File file) throws Exception {
         try {
-            Yylex l = new Yylex(new FileReader(new File(loader.getResource("interpreter/core001.cc").getPath())));
+            Yylex l = new Yylex(new FileReader(file));
             parser p = new parser(l);
             Program parse_tree = p.pProgram();
-            Interpreter.eval(parse_tree, new File("core001.ll"));
+            Interpreter.eval(parse_tree, new File("out.ll"));
 
             //System.out.print(file.getName());
             //System.out.println(": OK");
@@ -81,5 +108,7 @@ public class InterpreterTest {
             e.printStackTrace();
             throw e;
         }
+
+        return true;
     }
 }

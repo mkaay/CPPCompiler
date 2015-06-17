@@ -64,7 +64,7 @@ public class Interpreter {
     public static String eval(Program program, String name) {
         Interpreter interpreter = new Interpreter(name);
         interpreter.interpretProgram(program);
-        interpreter.dump();
+        //interpreter.dump();
 
         return interpreter.getModule();
     }

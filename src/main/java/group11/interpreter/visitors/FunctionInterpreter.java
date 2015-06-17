@@ -29,6 +29,12 @@ public class FunctionInterpreter implements Def.Visitor<ValueRef, ModuleRef> {
             statement.accept(new StatementInterpreter(), functionScope);
         }
 
+        // terminate last block
+        if (function.type_.accept(new TypeInterpreter(), null).equals(LLVM.VoidType())) {
+            LLVM.BuildRetVoid(functionScope.getBuilder());
+        } else {
+            LLVM.BuildUnreachable(functionScope.getBuilder());
+        }
 
         PassManagerRef passManager = LLVM.CreateFunctionPassManagerForModule(module);
         LLVM.AddBasicAliasAnalysisPass(passManager);
