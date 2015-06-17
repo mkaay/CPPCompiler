@@ -20,6 +20,8 @@ public class InterpreterTest {
 
     //@Test
     public void test() {
+        // api playground
+
         ModuleRef mod = LLVM.ModuleCreateWithName("test");
 
         TypeRefArray param_types = new TypeRefArray(2);
@@ -34,17 +36,6 @@ public class InterpreterTest {
 
         ValueRef tmp = LLVM.BuildAdd(builder, LLVM.GetParam(sum, 0), LLVM.GetParam(sum, 1), "tmp");
         LLVM.BuildRet(builder, tmp);
-
-
-        PassManagerRef passManager = LLVM.CreatePassManager();
-        PassManagerBuilderRef passBuilder = LLVM.PassManagerBuilderCreate();
-
-        LLVM.PassManagerBuilderSetOptLevel(passBuilder, 2);
-        LLVM.PassManagerBuilderSetDisableTailCalls(passBuilder, true);
-        LLVM.PassManagerBuilderUseAlwaysInliner(passBuilder, true);
-
-        LLVM.PassManagerBuilderPopulateModulePassManager(passBuilder, passManager);
-        LLVM.RunPassManager(passManager, mod);
 
         StringOut ErrorMessage = new StringOut();
         TargetRef target = LLVM.LookupTarget(LLVM.getLlvmHostTriple(), ErrorMessage);
@@ -73,7 +64,7 @@ public class InterpreterTest {
         List<Object[]> data = new LinkedList<>();
 
         for (File file : dir.listFiles()) {
-            if (file.isFile()) {
+            if (file.isFile() && file.getName().endsWith("cc")) {
                 data.add(new Object[]{file});
             }
         }
@@ -88,11 +79,13 @@ public class InterpreterTest {
 
     @Test
     public boolean interpret(File file) throws Exception {
+        new File("llvm_out").mkdirs();
+
         try {
             Yylex l = new Yylex(new FileReader(file));
             parser p = new parser(l);
             Program parse_tree = p.pProgram();
-            Interpreter.eval(parse_tree, new File("out.ll"));
+            Interpreter.eval(parse_tree, new File(String.format("llvm_out/%s.ll", file.getName().split("\\.")[0])));
 
             //System.out.print(file.getName());
             //System.out.println(": OK");
@@ -109,6 +102,7 @@ public class InterpreterTest {
             throw e;
         }
 
+        // bindings will segfault if we do something wrong, so we can return true
         return true;
     }
 }

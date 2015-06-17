@@ -61,15 +61,16 @@ public class ExpressionInterpreter implements CPP.Absyn.Exp.Visitor<ValueRef, Fu
     @Override
     public ValueRef visit(EPIncr exp, FunctionScope functionScope) {
         ValueRef left = exp.exp_.accept(new ExpressionInterpreter(), functionScope);
+        ValueRef left_val = ensureValue(left, functionScope);
 
-        if (LLVM.TypeOf(left).equals(LLVM.Int32Type())) {
+        if (LLVM.TypeOf(left_val).equals(LLVM.Int32Type())) {
             ValueRef right = LLVM.ConstInt(LLVM.Int32Type(), BigInteger.ONE, false);
-            ValueRef ret = LLVM.BuildAdd(functionScope.getBuilder(), left, right, functionScope.uniqueName("pincr"));
+            ValueRef ret = LLVM.BuildAdd(functionScope.getBuilder(), left_val, right, functionScope.uniqueName("pincr"));
             LLVM.BuildStore(functionScope.getBuilder(), ret, left);
             return ret;
         } else {
             ValueRef right = LLVM.ConstReal(LLVM.DoubleType(), 1);
-            ValueRef ret = LLVM.BuildFAdd(functionScope.getBuilder(), left, right, functionScope.uniqueName("pincr"));
+            ValueRef ret = LLVM.BuildFAdd(functionScope.getBuilder(), left_val, right, functionScope.uniqueName("pincr"));
             LLVM.BuildStore(functionScope.getBuilder(), ret, left);
             return ret;
         }
@@ -78,15 +79,16 @@ public class ExpressionInterpreter implements CPP.Absyn.Exp.Visitor<ValueRef, Fu
     @Override
     public ValueRef visit(EPDecr exp, FunctionScope functionScope) {
         ValueRef left = exp.exp_.accept(new ExpressionInterpreter(), functionScope);
+        ValueRef left_val = ensureValue(left, functionScope);
 
-        if (LLVM.TypeOf(left).equals(LLVM.Int32Type())) {
+        if (LLVM.TypeOf(left_val).equals(LLVM.Int32Type())) {
             ValueRef right = LLVM.ConstInt(LLVM.Int32Type(), BigInteger.ONE, false);
-            ValueRef ret = LLVM.BuildSub(functionScope.getBuilder(), left, right, functionScope.uniqueName("pdecr"));
+            ValueRef ret = LLVM.BuildSub(functionScope.getBuilder(), left_val, right, functionScope.uniqueName("pdecr"));
             LLVM.BuildStore(functionScope.getBuilder(), ret, left);
             return ret;
         } else {
             ValueRef right = LLVM.ConstReal(LLVM.DoubleType(), 1);
-            ValueRef ret = LLVM.BuildFSub(functionScope.getBuilder(), left, right, functionScope.uniqueName("pdecr"));
+            ValueRef ret = LLVM.BuildFSub(functionScope.getBuilder(), left_val, right, functionScope.uniqueName("pdecr"));
             LLVM.BuildStore(functionScope.getBuilder(), ret, left);
             return ret;
         }
@@ -95,24 +97,28 @@ public class ExpressionInterpreter implements CPP.Absyn.Exp.Visitor<ValueRef, Fu
     @Override
     public ValueRef visit(EIncr exp, FunctionScope functionScope) {
         ValueRef left = exp.exp_.accept(new ExpressionInterpreter(), functionScope);
-        if (LLVM.TypeOf(left).equals(LLVM.Int32Type())) {
+        ValueRef left_val = ensureValue(left, functionScope);
+
+        if (LLVM.TypeOf(left_val).equals(LLVM.Int32Type())) {
             ValueRef right = LLVM.ConstInt(LLVM.Int32Type(), BigInteger.ONE, false);
-            return LLVM.BuildAdd(functionScope.getBuilder(), left, right, functionScope.uniqueName("incr"));
+            return LLVM.BuildAdd(functionScope.getBuilder(), left_val, right, functionScope.uniqueName("incr"));
         } else {
             ValueRef right = LLVM.ConstReal(LLVM.DoubleType(), 1);
-            return LLVM.BuildFAdd(functionScope.getBuilder(), left, right, functionScope.uniqueName("incr"));
+            return LLVM.BuildFAdd(functionScope.getBuilder(), left_val, right, functionScope.uniqueName("incr"));
         }
     }
 
     @Override
     public ValueRef visit(EDecr exp, FunctionScope functionScope) {
         ValueRef left = exp.exp_.accept(new ExpressionInterpreter(), functionScope);
-        if (LLVM.TypeOf(left).equals(LLVM.Int32Type())) {
+        ValueRef left_val = ensureValue(left, functionScope);
+
+        if (LLVM.TypeOf(left_val).equals(LLVM.Int32Type())) {
             ValueRef right = LLVM.ConstInt(LLVM.Int32Type(), BigInteger.ONE, false);
-            return LLVM.BuildSub(functionScope.getBuilder(), left, right, functionScope.uniqueName("decr"));
+            return LLVM.BuildSub(functionScope.getBuilder(), left_val, right, functionScope.uniqueName("decr"));
         } else {
             ValueRef right = LLVM.ConstReal(LLVM.DoubleType(), 1);
-            return LLVM.BuildFSub(functionScope.getBuilder(), left, right, functionScope.uniqueName("decr"));
+            return LLVM.BuildFSub(functionScope.getBuilder(), left_val, right, functionScope.uniqueName("decr"));
         }
     }
 
@@ -296,8 +302,6 @@ public class ExpressionInterpreter implements CPP.Absyn.Exp.Visitor<ValueRef, Fu
         //left = ensureValue(left, functionScope);
         right = ensureValue(right, functionScope);
 
-        //ValueRef value = LLVM.BuildLoad(functionScope.getBuilder(), right, functionScope.uniqueName("tmp"));
-
         LLVM.BuildStore(functionScope.getBuilder(), right, left);
         return left;
     }
@@ -311,10 +315,13 @@ public class ExpressionInterpreter implements CPP.Absyn.Exp.Visitor<ValueRef, Fu
         //System.out.println(String.format("before: %s", LLVM.PrintTypeToString(LLVM.TypeOf(value))));
 
         if (LLVM.TypeOf(value).equals(LLVM.PointerType(LLVM.Int32Type(), 0))) {
-            value = LLVM.BuildLoad(functionScope.getBuilder(), value, String.format("%s_value", LLVM.GetValueName(value)));
+            value = LLVM.BuildLoad(functionScope.getBuilder(), value, String.format("value_%s", LLVM.GetValueName(value)));
 
         } else if (LLVM.TypeOf(value).equals(LLVM.PointerType(LLVM.DoubleType(), 0))) {
-            value = LLVM.BuildLoad(functionScope.getBuilder(), value, String.format("%s_value", LLVM.GetValueName(value)));
+            value = LLVM.BuildLoad(functionScope.getBuilder(), value, String.format("value_%s", LLVM.GetValueName(value)));
+
+        } else if (LLVM.TypeOf(value).equals(LLVM.PointerType(LLVM.Int1Type(), 0))) {
+            value = LLVM.BuildLoad(functionScope.getBuilder(), value, String.format("value_%s", LLVM.GetValueName(value)));
 
         }
 

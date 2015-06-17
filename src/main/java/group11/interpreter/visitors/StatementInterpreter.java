@@ -43,7 +43,11 @@ public class StatementInterpreter implements Stm.Visitor<Object, FunctionScope> 
     public Object visit(SReturn statement, FunctionScope functionScope) {
         ValueRef value = statement.exp_.accept(new ExpressionInterpreter(), functionScope);
 
-        LLVM.BuildRet(functionScope.getBuilder(), ExpressionInterpreter.ensureValue(value, functionScope));
+        if (LLVM.TypeOf(value).equals(LLVM.VoidType())) {
+            LLVM.BuildRetVoid(functionScope.getBuilder());
+        } else {
+            LLVM.BuildRet(functionScope.getBuilder(), ExpressionInterpreter.ensureValue(value, functionScope));
+        }
 
         return null;
     }
@@ -58,15 +62,11 @@ public class StatementInterpreter implements Stm.Visitor<Object, FunctionScope> 
     /**
      * <last_block>:
      * br label %while.cond
-     * <p/>
      * while.cond:
      * %cmp = <cond>
      * br i1 %cmp, label %while.body, label %while.end
-     * <p/>
      * while.body:
-     * <stm>
      * br label %while.cond
-     * <p/>
      * while.end:
      * <new_block>
      */
@@ -109,19 +109,15 @@ public class StatementInterpreter implements Stm.Visitor<Object, FunctionScope> 
     /**
      * <last_block>:
      * br label %if.cond
-     * <p/>
      * if.cond:
      * %cmp = <cond>
      * br i1 %cmp, label %if.then, label %if.else
-     * <p/>
      * if.then:
      * <stm_1>
      * br label %if.end
-     * <p/>
      * if.else:
      * <stm_2>
      * br label %if.end
-     * <p/>
      * if.end:
      * <new_block>
      */
