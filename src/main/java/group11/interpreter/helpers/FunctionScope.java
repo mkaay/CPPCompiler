@@ -126,7 +126,11 @@ public class FunctionScope {
     }
 
     private int getPrefixCount(String prefix) {
-        int count = prefixCounter.getOrDefault(prefix, 0);
+        int count = 0;
+        if (prefixCounter.containsKey(prefix)) {
+            count = prefixCounter.get(prefix);
+        }
+        //int count = prefixCounter.getOrDefault(prefix, 0);
         prefixCounter.put(prefix, count + 1);
         return count;
     }
